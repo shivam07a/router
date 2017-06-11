@@ -1,38 +1,34 @@
-// Package router implements generic http routing handler for the inbuilt net/http package.
+/*Package router contains structs and functions for a generic http muxer.
 
-/*
-   Package router contains structs and functions for a generic http muxer.
+  Usage
 
+  The main usage of this package is through the struct "Router". Like in a simple server,
+  instead of "http.HandleFunc", "router.HandleFunc" is used. The function pattern, however,
+  varies.
+      func (w http.ResponseWriter, r *http.Request) => func (w http.ResponseWriter, r *http.Request, params router.Params)
 
-   Usage
+  A sample usage is written below :
 
-   The main usage of this package is through the struct "Router". Like in a simple server,
-   instead of "http.HandleFunc", "router.HandleFunc" is used. The function pattern, however,
-   varies.
-       func (w http.ResponseWriter, r *http.Request) => func (w http.ResponseWriter, r *http.Request, params router.Params)
+      r := router.NewRouter()
+      r.HandleFunc("/:username", UserPage)
+      r.HandleFunc("/:username//////:repo", Home)
+      r.HandleFunc("/", Home)
+      http.ListenAndServe(":8080", r)
 
-   A sample usage is written below :
+  In the handler function, the params is a simple map of string to string. Consider the above
+  example.
 
-       r := router.NewRouter()
-       r.HandleFunc("/:username", UserPage)
-       r.HandleFunc("/:username//////:repo", Home)
-       r.HandleFunc("/", Home)
-       http.ListenAndServe(":8080", r)
+      func UserPage(w http.ResponseWriter, r *http.Request, params router.Params) {
+              username := params["username"]
+              ...
+      }
 
-   In the handler function, the params is a simple map of string to string. Consider the above
-   example.
+  All the URL Path variables can be accessed from the params parameter.
 
-       func UserPage(w http.ResponseWriter, r *http.Request, params router.Params) {
-               username := params["username"]
-               ...
-       }
+  Normalised URLs
 
-   All the URL Path variables can be accessed from the params parameter.
-
-   Normalised URLs
-
-   In the second route in the above example, the route "/:username//////:repo" will automatically
-   be normalised to "/:username/:repo".
+  In the second route in the above example, the route "/:username//////:repo" will automatically
+  be normalised to "/:username/:repo".
 */
 package router
 
@@ -135,7 +131,6 @@ func (rt *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *
 	for _, val := range rt.routes {
 		if val.pattern == pattern {
 			panic("Same Route Exists")
-			return
 		}
 	}
 	nr := Route{pattern, handler}
