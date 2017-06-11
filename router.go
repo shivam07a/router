@@ -1,3 +1,39 @@
+// Package router implements generic http routing handler for the inbuilt net/http package.
+
+/*
+   Package router contains structs and functions for a generic http muxer.
+
+
+   Usage
+
+   The main usage of this package is through the struct "Router". Like in a simple server,
+   instead of "http.HandleFunc", "router.HandleFunc" is used. The function pattern, however,
+   varies.
+       func (w http.ResponseWriter, r *http.Request) => func (w http.ResponseWriter, r *http.Request, params router.Params)
+
+   A sample usage is written below :
+
+       r := router.NewRouter()
+       r.HandleFunc("/:username", UserPage)
+       r.HandleFunc("/:username//////:repo", Home)
+       r.HandleFunc("/", Home)
+       http.ListenAndServe(":8080", r)
+
+   In the handler function, the params is a simple map of string to string. Consider the above
+   example.
+
+       func UserPage(w http.ResponseWriter, r *http.Request, params router.Params) {
+               username := params["username"]
+               ...
+       }
+
+   All the URL Path variables can be accessed from the params parameter.
+
+   Normalised URLs
+
+   In the second route in the above example, the route "/:username//////:repo" will automatically
+   be normalised to "/:username/:repo".
+*/
 package router
 
 import (
@@ -7,11 +43,15 @@ import (
 	"strings"
 )
 
+// A Route contains string pattern corresponding to the URLs it has to be matched and
+// the respective handler function for that URL
 type Route struct {
 	pattern string
 	handler func(http.ResponseWriter, *http.Request, Params)
 }
 
+// Match method is used to check if the given path matches the pattern.
+// It returns a boolean.
 func (route *Route) Match(path string) bool {
 	psp := strings.Split(route.pattern, "/")
 	sp := strings.Split(path, "/")
@@ -32,6 +72,8 @@ func (route *Route) Match(path string) bool {
 	return true
 }
 
+// GetParams is used to get the URL parameters for a given pattern.
+// It returns Params and an error.
 func (route *Route) GetParams(path string) (Params, error) {
 	params := make(Params, 0)
 	if !route.Match(path) {
@@ -49,18 +91,25 @@ func (route *Route) GetParams(path string) (Params, error) {
 	return params, nil
 }
 
+// Router is a struct that satisfies the handler interface.
+// It can be used as a http.Handler in the http.ListenAndServe.
 type Router struct {
 	routes []Route
 }
 
+// Params is used to store the URL parameters
+// This is a simple key value map(string).
 type Params map[string]string
 
+// NewRouter is used for making a new Router variables
 func NewRouter() *Router {
 	r := &Router{}
 	r.routes = make([]Route, 0)
 	return r
 }
 
+// ServeHTTP method makes the router a qualified handler.
+// This is where all the pattern based routing takes place.
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, val := range rt.routes {
 		if !val.Match(r.URL.Path) {
@@ -78,6 +127,9 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+// HandleFunc method is used to register Routes for the corresponding handler function.
+// This can be used like http.HandleFunc, but the blueprint of the handler function is different.
+//     func(http.ResponseWriter, *http.Request, Params)
 func (rt *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request, Params)) {
 	pattern = normalizePath(pattern)
 	for _, val := range rt.routes {
@@ -91,6 +143,7 @@ func (rt *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *
 	fmt.Println(rt.routes)
 }
 
+// normalizePath is used to sanitize the pattern passed to the HandleFunc.
 func normalizePath(path string) string {
 	ret := "/"
 	sp := strings.Split(path, "/")
