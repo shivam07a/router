@@ -143,7 +143,7 @@ func normalizePath(path string) string {
 	ret := "/"
 	sp := strings.Split(path, "/")
 	for _, val := range sp {
-		if val == "" {
+		if val == "" || val == "." || val == ".." {
 			continue
 		}
 		ret += val + "/"
