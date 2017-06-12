@@ -107,6 +107,7 @@ func NewRouter() *Router {
 // ServeHTTP method makes the router a qualified handler.
 // This is where all the pattern based routing takes place.
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.URL.Path = normalizePath(r.URL.Path)
 	for _, val := range rt.routes {
 		if !val.Match(r.URL.Path) {
 			continue
