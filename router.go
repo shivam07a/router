@@ -64,6 +64,9 @@ func (route *Route) Match(path string) bool {
 				break
 			}
 		}
+		if index > len(sp)-1 {
+			return false
+		}
 		if val != sp[index] {
 			return false
 		}
