@@ -51,14 +51,19 @@ type Route struct {
 func (route *Route) Match(path string) bool {
 	psp := strings.Split(route.pattern, "/")
 	sp := strings.Split(path, "/")
-	if len(sp) != len(psp) {
-		fmt.Println("Lengths Don't match")
-		return false
+	if !strings.Contains(route.pattern, "/*") {
+		if len(sp) != len(psp) {
+			fmt.Println("Lengths Don't match")
+			return false
+		}
 	}
 	for index, val := range psp {
 		if len(val) > 0 {
 			if val[0] == ':' {
 				continue
+			}
+			if val[0] == '*' {
+				break
 			}
 		}
 		if val != sp[index] {
@@ -77,10 +82,23 @@ func (route *Route) GetParams(path string) (Params, error) {
 	}
 	psp := strings.Split(route.pattern, "/")
 	sp := strings.Split(path, "/")
+	isStar := false
+	starParamName := ""
 	for index, val := range psp {
 		if len(val) > 0 {
-			if val[0] == ':' {
+			if val[0] == ':' && !isStar {
 				params[val[1:]] = sp[index]
+			}
+			if val[0] == '*' {
+				isStar = true
+				starParamName = val[1:]
+				fmt.Println(starParamName)
+			}
+			if isStar {
+				fmt.Println("Joining the rest")
+				temp := strings.Join(sp[index:], "/")
+				params[starParamName] = temp
+				break
 			}
 		}
 	}
