@@ -34,7 +34,6 @@ package router
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -53,7 +52,6 @@ func (route *Route) Match(path string) bool {
 	sp := strings.Split(path, "/")
 	if !strings.Contains(route.pattern, "/*") {
 		if len(sp) != len(psp) {
-			fmt.Println("Lengths Don't match")
 			return false
 		}
 	}
@@ -92,10 +90,8 @@ func (route *Route) GetParams(path string) (Params, error) {
 			if val[0] == '*' {
 				isStar = true
 				starParamName = val[1:]
-				fmt.Println(starParamName)
 			}
 			if isStar {
-				fmt.Println("Joining the rest")
 				temp := strings.Join(sp[index:], "/")
 				params[starParamName] = temp
 				break
@@ -135,7 +131,6 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Internal Server Error", 503)
 			return
 		}
-		fmt.Println(params)
 		val.handler(w, r, params)
 		return
 	}
@@ -154,7 +149,6 @@ func (rt *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *
 	}
 	nr := Route{pattern, handler}
 	rt.routes = append(rt.routes, nr)
-	fmt.Println(rt.routes)
 }
 
 // normalizePath is used to sanitize the pattern passed to the HandleFunc.
